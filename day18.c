@@ -203,6 +203,8 @@ int main(void) {
     /* part 2 */
     struct cycle cy = find_cycle(u);
     printf("%lu\n", get_cycle_value_at(cy, ONE_BILLION - 10));
+    free(u->cells[0]);
+    free(u->cells[1]);
     free(u);
     return 0;
 }
