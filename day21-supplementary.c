@@ -7,13 +7,13 @@ int do_program(int64_t init) {
     int64_t r[6] = {init, 0, 0, 0, 0, 0};
     int counter = 0;
 label_C:
-    r[4] = r[1] | 65536;
+    r[4] = r[1] | 0x10000;
     r[1] = 16298264;
 label_F:
-    r[1] = (((r[1] + (r[4] & 255)) & 16777215) * 65899) & 16777215;
+    r[1] = (((r[1] + (r[4] & 0xFF)) & 0xFFFFFF) * 65899) & 0xFFFFFF;
     if (256 > r[4]) goto label_A;
 /* label_B: */
-    for (r[5] = 0; !((r[5] + 1) * 256 > r[4]); r[5]++)
+    for (r[5] = 0; !((r[5] + 1) * 0x100 > r[4]); r[5]++)
         ;
 /* label_E: */
     r[4] = r[5];
