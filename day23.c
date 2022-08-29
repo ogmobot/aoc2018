@@ -1,3 +1,4 @@
+#include <malloc.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -17,40 +18,17 @@ struct probe {
     int32_t radius;
 };
 
-struct region {
-    struct coord minx;
-    struct coord maxx;
-    struct coord miny;
-    struct coord maxy;
-    struct coord minz;
-    struct coord maxz;
+struct bounding_box {
+    struct coord corner; /* minx, miny, minz */
+    int32_t size;
 };
 
-struct region probe2region (struct probe p) {
-    struct region v;
-    int32_t x = p.centre.x;
-    int32_t y = p.centre.y;
-    int32_t z = p.centre.z;
-    int32_t r = p.radius;
-    v.minx = (struct coord) {x - r, y, z};
-    v.maxx = (struct coord) {x + r, y, z};
-    v.miny = (struct coord) {x, y - r, z};
-    v.maxy = (struct coord) {x, y + r, z};
-    v.minz = (struct coord) {x, y, z - r};
-    v.maxz = (struct coord) {x, y, z + r};
-    return v;
-}
-
-struct probe region2probe (struct region r) {
-    return (struct probe) {
-        (struct coord) {
-            avg(r.maxx.x, r.minx.x),
-            avg(r.maxy.y, r.miny.y),
-            avg(r.maxz.z, r.minz.z)
-        },
-        (r.maxx.x - r.minx.x) / 2
-    };
-}
+struct bbqueue { /* lol */
+    int32_t score;
+    uint32_t dist;
+    struct bounding_box box;
+    struct bbqueue *next;
+};
 
 void read_probes(char *filename, struct probe *probes) {
     FILE *fp = fopen(filename, "r");
@@ -84,74 +62,206 @@ bool probe_contains_point(struct probe p, struct coord x) {
     return manhattan(p.centre, x) <= p.radius;
 }
 
-/*
-TODO
-struct region overlap(struct region a, struct region b) {
-    return (struct region) {0, 0, 0, 0, 0, 0};
+struct coord box_centre(struct bounding_box b) {
+    return ((struct coord) {
+        b.corner.x + (b.size / 2),
+        b.corner.y + (b.size / 2),
+        b.corner.z + (b.size / 2)
+    });
 }
-*/
 
-struct coord find_nearby(struct coord test_point, struct probe *probes) {
-    uint32_t n_overlaps = 0;
-    for (size_t j = 0; j < NUM_PROBES; j++) {
-        n_overlaps += probe_contains_point(probes[j], test_point);
+bool box_intersects_probe(struct bounding_box b, struct probe p) {
+    if (b.size == 1)
+        return probe_contains_point(p, b.corner);
+    return manhattan(box_centre(b), p.centre) <= (b.size * 2) + p.radius;
+}
+
+uint32_t count_intersections(struct bounding_box b, struct probe *probes) {
+    uint32_t count = 0;
+    for (size_t i = 0; i < NUM_PROBES; i++) {
+        count += box_intersects_probe(b, probes[i]);
     }
-    bool keep_going = true;
-    while (keep_going) {
-        keep_going = false;
-        struct coord neighbours[26] = {
-            {test_point.x - 1, test_point.y - 1, test_point.z - 1},
-            {test_point.x - 1, test_point.y - 1, test_point.z + 0},
-            {test_point.x - 1, test_point.y - 1, test_point.z + 1},
-            {test_point.x - 1, test_point.y + 0, test_point.z - 1},
-            {test_point.x - 1, test_point.y + 0, test_point.z + 0},
-            {test_point.x - 1, test_point.y + 0, test_point.z + 1},
-            {test_point.x - 1, test_point.y + 1, test_point.z - 1},
-            {test_point.x - 1, test_point.y + 1, test_point.z + 0},
-            {test_point.x - 1, test_point.y + 1, test_point.z + 1},
-            {test_point.x + 0, test_point.y - 1, test_point.z - 1},
-            {test_point.x + 0, test_point.y - 1, test_point.z + 0},
-            {test_point.x + 0, test_point.y - 1, test_point.z + 1},
-            {test_point.x + 0, test_point.y + 0, test_point.z - 1},
-            /*{test_point.x + 0, test_point.y + 0, test_point.z + 0},*/
-            {test_point.x + 0, test_point.y + 0, test_point.z + 1},
-            {test_point.x + 0, test_point.y + 1, test_point.z - 1},
-            {test_point.x + 0, test_point.y + 1, test_point.z + 0},
-            {test_point.x + 0, test_point.y + 1, test_point.z + 1},
-            {test_point.x + 1, test_point.y - 1, test_point.z - 1},
-            {test_point.x + 1, test_point.y - 1, test_point.z + 0},
-            {test_point.x + 1, test_point.y - 1, test_point.z + 1},
-            {test_point.x + 1, test_point.y + 0, test_point.z - 1},
-            {test_point.x + 1, test_point.y + 0, test_point.z + 0},
-            {test_point.x + 1, test_point.y + 0, test_point.z + 1},
-            {test_point.x + 1, test_point.y + 1, test_point.z - 1},
-            {test_point.x + 1, test_point.y + 1, test_point.z + 0},
-            {test_point.x + 1, test_point.y + 1, test_point.z + 1},
-        };
-        for (size_t i = 0; i < 26; i++) {
-            uint32_t t_overlaps = 0;
-            for (size_t j = 0; j < NUM_PROBES; j++) {
-                t_overlaps += probe_contains_point(probes[j], neighbours[i]);
-            }
-            /*
-            printf("t_overlaps=%d @ (%d, %d, %d) => manhattan=%u\n",
-                t_overlaps,
-                neighbours[i].x, neighbours[i].y, neighbours[i].z,
-                manhattan((struct coord) {0, 0, 0}, neighbours[i]));
-            */
-            if (t_overlaps > n_overlaps) {
-                keep_going = true;
-                test_point = neighbours[i];
-                n_overlaps = t_overlaps;
-                continue;
-            }
+    return count;
+}
+
+void print_queue(struct bbqueue *q) {
+    for (size_t i = 0; i < 4; i++) {
+        if (!q) {
+            printf("*");
+            break;
+        }
+        printf("(%u,%u,%d) - ", q->score, q->dist, q->box.size);
+        q = q->next;
+    }
+    printf("\n");
+    return;
+}
+
+/* World's worst priority queue */
+void enqueue (
+    struct bbqueue **q,
+    struct bounding_box b,
+    uint32_t score,
+    uint32_t dist
+) {
+    /*
+    printf("Enqueuing <%d,%d,%d>"
+        "score=%u, dist=%u, size=%d\n",
+        b.corner.x, b.corner.y, b.corner.z,
+        score, dist, b.size);
+    */
+    /* highest score is front of queue */
+    /* if score is tied, break by size */
+    /* if size is tied, break by dist */
+    struct bbqueue *n = calloc(1, sizeof(struct bbqueue));
+    n->box = b;
+    n->score = score;
+    n->dist = dist;
+    n->next = (void *) 0;
+    if (!(*q)) {
+        *q = n;
+    } else {
+        /* There's a more elegant way to do this but meh */
+        struct bbqueue *prev = (void *) 0;
+        struct bbqueue *current;
+        for (current = *q; current; current = current->next) {
+            if (score > current->score)
+                break;
+            if (score == current->score
+                && dist < current->dist)
+                break;
+            if (score == current->score
+                && dist == current->dist
+                && b.size < (current->box).size)
+                break;
+            prev = current;
+        }
+        /* Insert here! */
+        n->next = current;
+        if (prev) {
+            prev->next = n;
+        } else {
+            *q = n;
         }
     }
-    return test_point;
+    /*
+    print_queue(*q);
+    */
+    return;
+}
+
+struct bounding_box dequeue (struct bbqueue **q) {
+    struct bbqueue *tmp = *q;
+    struct bounding_box b = tmp->box;
+    (*q) = tmp->next;
+    free(tmp);
+    return b;
+}
+
+void free_all(struct bbqueue *q) {
+    while (q) {
+        struct bbqueue *tmp = q;
+        q = q->next;
+        free(tmp);
+    }
+    return;
+}
+
+struct bounding_box initialise_bounds(struct probe *probes) {
+    int32_t minx = probes[0].centre.x,
+            maxx = probes[0].centre.x,
+            miny = probes[0].centre.y,
+            maxy = probes[0].centre.y,
+            minz = probes[0].centre.z,
+            maxz = probes[0].centre.z;
+    for (size_t i = 0; i < NUM_PROBES; i++) {
+        if (probes[i].centre.x < minx)
+            minx = probes[i].centre.x;
+        if (probes[i].centre.x > maxx)
+            maxx = probes[i].centre.x;
+        if (probes[i].centre.y < miny)
+            miny = probes[i].centre.y;
+        if (probes[i].centre.y > maxy)
+            maxy = probes[i].centre.y;
+        if (probes[i].centre.z < minz)
+            minz = probes[i].centre.z;
+        if (probes[i].centre.z > maxz)
+            maxz = probes[i].centre.z;
+    }
+    int32_t size = 1;
+    while ((minx + size < maxx)
+        || (miny + size < maxy)
+        || (minz + size < maxz)
+    ) {
+        size *= 2;
+    }
+    return ((struct bounding_box) {(struct coord) {minx, miny, minz}, size});
+}
+
+struct coord most_intersections(struct probe *probes) {
+    const struct coord origin = (struct coord) {0, 0, 0};
+    struct bounding_box b = initialise_bounds(probes);
+    struct bbqueue *todo = (void *) 0;
+    enqueue(&todo, b, NUM_PROBES, manhattan(box_centre(b), origin));
+    while (todo) {
+        b = dequeue(&todo);
+        if (b.size == 1) {
+            free_all(todo);
+            return b.corner;
+        }
+        int32_t s = b.size / 2;
+        struct bounding_box candidates[8] = {
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x, b.corner.y, b.corner.z },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x, b.corner.y, b.corner.z + s },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x, b.corner.y + s, b.corner.z },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x, b.corner.y + s, b.corner.z + s },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x + s, b.corner.y, b.corner.z },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x + s, b.corner.y, b.corner.z + s, },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x + s, b.corner.y + s, b.corner.z },
+                s },
+            (struct bounding_box) {
+                (struct coord) {
+                    b.corner.x + s, b.corner.y + s, b.corner.z + s },
+                s }
+        };
+        /*
+        printf("===\n");
+        */
+        for (size_t i = 0; i < 8; i++)
+            enqueue(
+                &todo,
+                candidates[i],
+                count_intersections(candidates[i], probes),
+                manhattan(origin, box_centre(candidates[i]))
+            );
+    }
+    /* Should never happen */
+    printf("UH OH!\n");
+    return b.corner;
 }
 
 int main(void) {
-    struct probe probes[NUM_PROBES];
+    struct probe probes[NUM_PROBES] = {0};
     read_probes("input23.txt", probes);
     /* Part 1 */
     size_t biggest = find_biggest_probe(probes);
@@ -162,74 +272,15 @@ int main(void) {
     }
     printf("%u\n", total);
     /* Part 2 */
-    /* The region with the most overlaps MUST get all of its vertices from
-     * probes! */
-    struct coord vertices[NUM_PROBES * 6];
-    struct coord candidates[NUM_PROBES * 6];
-    uint32_t most_overlaps = 0;
-    size_t num_candidates = 0;
-    for (size_t i = 0; i < NUM_PROBES * 6; i++) {
-        if ((i % 6) == 0) {
-            /*
-            printf("===\n");
-            */
-            struct region tmp = probe2region(probes[i / 6]);
-            vertices[i + 0] = tmp.minx;
-            vertices[i + 1] = tmp.maxx;
-            vertices[i + 2] = tmp.miny;
-            vertices[i + 3] = tmp.maxy;
-            vertices[i + 4] = tmp.minz;
-            vertices[i + 5] = tmp.maxz;
-        }
-        /*
-        printf("(%d, %d, %d)\n", vertices[i].x, vertices[i].y, vertices[i].z);
-        */
-        uint32_t overlaps = 0;
-        for (size_t j = 0; j < NUM_PROBES; j++) {
-            overlaps += probe_contains_point(probes[j], vertices[i]);
-        }
-        if (overlaps == 0) {
-            printf("Something's screwy here!\n");
-            printf("Coord (%d, %d, %d) has no overlaps",
-                vertices[i].x, vertices[i].y, vertices[i].z);
-            printf(" but should overlap with at least probe <%d, %d, %d> r=%d\n",
-                probes[i/6].centre.x, probes[i/6].centre.y,
-                probes[i/6].centre.z, probes[i/6].radius);
-            printf("(line %lu)\n", i/6);
-        }
-        /*
-        printf("%u\n", overlaps);
-        */
-        if (overlaps >= most_overlaps) {
-            if (overlaps > most_overlaps) {
-                printf("Index %lu: New best is %d\n", i, overlaps);
-                num_candidates = 0;
-                most_overlaps = overlaps;
-            }
-            /*
-            printf("(added new candidate)\n");
-            printf("(%d, %d, %d)\n", vertices[i].x, vertices[i].y, vertices[i].z);
-            */
-            candidates[num_candidates++] = vertices[i];
-        }
+    struct coord most = most_intersections(probes);
+    /*
+    printf("(%d,%d,%d)\n", most.x, most.y, most.z);
+    total = 0;
+    for (size_t i = 0; i < NUM_PROBES; i++) {
+        total += probe_contains_point(probes[i], most);
     }
-    printf("Most overlaps is %d\n", most_overlaps);
-    for (size_t i = 0; i < num_candidates; i++) {
-        printf("(%d,%d,%d)",
-            candidates[i].x, candidates[i].y, candidates[i].z);
-        printf(" => %u\n", manhattan(
-            (struct coord) {0, 0, 0},
-            candidates[i]
-        ));
-        struct coord nearby = find_nearby(candidates[i], probes);
-        printf("... (%d,%d,%d)",
-            candidates[i].x, candidates[i].y, candidates[i].z);
-        printf(" => %u\n", manhattan(
-            (struct coord) {0, 0, 0},
-            nearby
-        ));
-    }
+    printf("Intersects with %u probes\n", total);
+    */
+    printf("%u\n", manhattan(most, (struct coord) {0, 0, 0}));
     return 0;
 }
-
-/* 33438815 is too low */
