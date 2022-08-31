@@ -100,6 +100,7 @@ void load_file(char *filename, struct buffer *b, uint8_t *rules) {
         /*printf("%s == %hhd\n", pattern, index);*/
         rules[index] = (outcome == '#');
     }
+    fclose(fp);
     return;
 }
 

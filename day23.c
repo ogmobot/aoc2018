@@ -39,6 +39,7 @@ void read_probes(char *filename, struct probe *probes) {
             &(probes->radius));
         probes++;
     } while (ret != EOF);
+    fclose(fp);
     return;
 }
 

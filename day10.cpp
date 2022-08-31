@@ -86,6 +86,7 @@ int main(void) {
     while (std::getline(inputfile, line)) {
         particles.push_back(Particle(line));
     }
+    inputfile.close();
     std::pair<int, int> dims = get_width_height(particles);
     int timer = 0;
     while (dims.second > 10) { // trial and error

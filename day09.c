@@ -86,6 +86,7 @@ int main(void) {
     FILE *fp = fopen("input09.txt", "r");
     uint32_t n_players, last_marble;
     get_numbers(fp, &n_players, &last_marble);
+    fclose(fp);
     /* part 1 */
     uint32_t result = play_game(n_players, last_marble);
     printf("%u\n", result);
