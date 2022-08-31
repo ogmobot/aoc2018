@@ -1,5 +1,4 @@
 #define _GNU_SOURCE
-#define _C_POSIX_SOURCE 1
 #include <malloc.h>
 #include <regex.h>
 #include <stdbool.h>
@@ -210,11 +209,10 @@ void print_unit(struct unit u) {
     printf("attack %d\n", u.attack_type);
 }
 
-int main(void) {
-    struct unit units[MAX_UNITS] = {};
+int32_t battle(struct unit *units, size_t n_units) {
     size_t init_order[MAX_UNITS] = {};
     size_t power_order[MAX_UNITS] = {};
-    size_t n_units = read_all_units("input24.txt", units);
+    uint32_t timeout = 50000; /* Assume we're in a loop if we take this long */
     for (size_t i = 0; i < n_units; i++) {
         init_order[i] = i;
         power_order[i] = i;
@@ -222,7 +220,7 @@ int main(void) {
     qsort_r(init_order, n_units, sizeof(size_t), compare_initiative, units);
     qsort_r(power_order, n_units, sizeof(size_t), compare_power, units);
     size_t winning_team;
-    while (1) {
+    while (timeout--) {
         /* Reset target validity */
         for (size_t i = 0; i < n_units; i++) {
             units[i].valid_target = (units[i].count > 0);
@@ -304,12 +302,43 @@ int main(void) {
             break;
         }
     }
+    if (!timeout)
+        return 0; /* draw by timeout */
     int32_t n_winners = 0;
     for (size_t i = 0; i < n_units; i++) {
         if (units[i].team == winning_team) {
             n_winners += units[i].count;
         }
     }
-    printf("%d\n", n_winners);
+    return winning_team == 0 ? n_winners    /* immune */
+                             : -n_winners;  /* infection */
+}
+
+void apply_boost(struct unit *units, size_t n, int32_t boost, uint8_t team) {
+    for (size_t i = 0; i < n; i++) {
+        if (units[i].team == team)
+            units[i].attack_damage += boost;
+    }
+    return;
+}
+
+int main(void) {
+    struct unit orig[MAX_UNITS] = {};
+    struct unit units[MAX_UNITS] = {};
+    size_t n_units = read_all_units("input24.txt", orig);
+    int32_t res;
+    /* part 1 */
+    memcpy(units, orig, n_units * sizeof(struct unit));
+    res = battle(units, n_units);
+    printf("%d\n", res >= 0 ? res : -res);
+    /* part 2 */
+    int32_t boost = 1;
+    do {
+        memcpy(units, orig, n_units * sizeof(struct unit));
+        apply_boost(units, n_units, boost, 0);
+        res = battle(units, n_units);
+        boost++;
+    } while (res <= 0);
+    printf("%d\n", res >= 0 ? res : -res);
     return 0;
 }
