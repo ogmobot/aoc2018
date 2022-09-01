@@ -43,35 +43,37 @@ int do_program(int64_t init, int32_t mode) {
     struct stack *ns = (void *) 0;
     int64_t random_val = 0, salt, tmp;
     int counter = 0;
-label_reset:
-    salt = random_val | 0x10000;
-    random_val = 16298264;
-label_loop:
-    random_val = (((random_val + (salt & 0xFF)) & 0xFFFFFF) * 65899) & 0xFFFFFF;
-    if (256 > salt) goto label_compare;
-    for (tmp = 0; !((tmp + 1) * 0x100 > salt); tmp++)
-        ;
-    salt = tmp;
-    goto label_loop;
-label_compare:
-    /*printf("%ld\n", r[1]);*/
-    switch (mode) {
-    case 0:
-        if (init == random_val)
-            return counter;
-    case 1:
-        return random_val;
-    case 2:
-        if (stack_contains(ns, random_val)) {
-            int res = ns->value;
-            free_stack(ns);
-            return res;
+    while (1) {
+        salt = random_val | 0x10000;
+        random_val = 16298264;
+        /* Generate pseudorandom values */
+        while (1) {
+            random_val = (((random_val + (salt & 0xFF)) & 0xFFFFFF)
+                * 65899) & 0xFFFFFF;
+            if (salt < 256) break;
+            for (tmp = 0; ((tmp + 1) * 0x100 <= salt); tmp++)
+                ;
+            salt = tmp;
         }
-        push_stack(&ns, random_val);
-        break;
+        /* Test whether pseudorandom value equals the given init value */
+        /*printf("=> %8ld\n", r[1]);*/
+        switch (mode) {
+        case 0:
+            if (init == random_val)
+                return counter;
+        case 1:
+            return random_val;
+        case 2:
+            if (stack_contains(ns, random_val)) {
+                int res = ns->value;
+                free_stack(ns);
+                return res;
+            }
+            push_stack(&ns, random_val);
+            break;
+        }
+        counter++;
     }
-    counter++;
-    goto label_reset;
 }
 
 int main(void) {
