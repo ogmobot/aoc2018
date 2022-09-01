@@ -3,8 +3,8 @@
 #include <iostream>
 #include <map>
 #include <queue>
-#include <sstream>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -95,7 +95,6 @@ class Maze {
                 while (s.at(j) != ')') {
                     j = find_next_pipe(s, j + 1);
                     substrings.push_back(s.substr(i, j - i));
-                    //std::cout << "pushed substring " << s.substr(i, j - i) << std::endl;
                     i = j + 1;
                 }
                 for (std::string ss : substrings) {
@@ -104,7 +103,6 @@ class Maze {
                     }
                 }
                 branch_tips = new_tips;
-                //std::cout << "branch_tips.size() == " << branch_tips.size() << std::endl;
                 i--; // to compensate for the i++ later
                 break;
             }
@@ -118,15 +116,19 @@ class Maze {
             case 'W':
                 std::set<coord> new_tips;
                 for (coord bt : branch_tips) {
-                    //std::cout << "("
-                              //<< bt.first << "," << bt.second
-                              //<< ") => ";
+                    /*
+                    std::cout << "("
+                              << bt.first << "," << bt.second
+                              << ") => ";
+                    */
                     new_tips.insert(
                         add_path(bt, std::string(1, s.at(i)))
                     );
-                    //std::cout << "("
-                              //<< new_tips.back().first << "," << new_tips.back().second
-                              //<< ")" << std::endl;
+                    /*
+                    std::cout << "("
+                              << new_tips.back().first << "," <<
+                              << new_tips.back().second << ")" << std::endl;
+                    */
                 }
                 branch_tips = new_tips;
                 break;
@@ -174,11 +176,6 @@ class Maze {
         }
         return {greatest_distance, n_distant_rooms};
     }
-
-    void display(void) {
-        // TODO
-        return;
-    }
 };
 
 std::string slurp(std::string filename) {
@@ -192,7 +189,6 @@ std::string slurp(std::string filename) {
 int main(void) {
     //std::cout << "Building map..." << std::endl;
     Maze m = Maze(slurp("input20.txt"));
-    //m.display(); // Map's too big to do this (except to debug examples)
     //std::cout << "Finding greatest distance..." << std::endl;
     auto solution = m.find_greatest_distance();
     std::cout << solution.first << std::endl;

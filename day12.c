@@ -5,6 +5,7 @@
 #define num_t int32_t
 #define STARTING_CAPACITY 256
 #define NUM_RULES 32
+#define FIFTY_BILLION 50000000000L
 
 struct buffer {
     size_t capacity;
@@ -56,7 +57,11 @@ uint8_t contains(struct buffer *b, num_t x) {
     return (b->active - b->array < b->length) && *(b->active) == x;
 }
 
-void populate(struct buffer *old, struct buffer *new, uint8_t rules[NUM_RULES]) {
+void populate(
+    struct buffer *old,
+    struct buffer *new,
+    uint8_t rules[NUM_RULES]
+) {
     /* Reads from old buffer and writes to new buffer */
     clear(new);
     num_t minimum = (old->array)[0];
@@ -137,9 +142,14 @@ int main(void) {
     size_t gen_count;
     for (gen_count = 0; gen_count < 20; gen_count++) {
         populate(bs[gen_count % 2], bs[(gen_count + 1) % 2], rules);
-        /*printf("Generation %2lu: %6lu\n", gen_count + 1, bs[(gen_count + 1) % 2]->length);*/
-        /*printf("%3lu ", gen_count);*/
-        /*display_buffer(bs[(gen_count + 1) % 2]);*/
+        /*
+        printf(
+            "Generation %2lu: %6lu\n",
+            gen_count + 1, bs[(gen_count + 1) % 2]->length
+        );
+        printf("%3lu ", gen_count);
+        display_buffer(bs[(gen_count + 1) % 2]);
+        */
     }
     /* Result should be in bs[0] after an even number of rounds */
     /*printf("Living cells: %lu\n", (bs[0])->length);*/
@@ -160,7 +170,7 @@ int main(void) {
     int64_t delta_score = (int64_t) (score_200 - score_198) / 2;
 
     /* After 50 billion generations... */
-    printf("%ld\n", score_200 + (delta_score * (50000000000 - 200)));
+    printf("%ld\n", score_200 + (delta_score * (FIFTY_BILLION - 200)));
 
     free((bs[0])->array);
     free(bs[0]);

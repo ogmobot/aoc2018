@@ -78,7 +78,10 @@ uint32_t play_game(uint32_t n_players, uint32_t last_marble) {
 }
 
 void get_numbers(FILE *fp, uint32_t *n_players, uint32_t *last_marble) {
-    fscanf(fp, "%u players; last marble is worth %u points", n_players, last_marble);
+    fscanf(fp,
+        "%u players; last marble is worth %u points",
+        n_players, last_marble
+    );
     return;
 }
 

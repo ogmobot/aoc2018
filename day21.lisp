@@ -90,17 +90,13 @@
             (lambda (a b c regs)
                 (setf (aref regs c) (if (= (aref regs a) (aref regs b)) 1 0))
                 regs))))
-        ;(cons "#ip"
-            ;(lambda (&rest rs)
-                ;(declare (ignore rs))
-                ;nil))))
 
 ;;; program logic ;;;
 
 (defun run-vm-until (program ip-index regs halt-test)
     ;; halt-test should be an argument that accepts two args: the registers and
     ;; an instruction.
-    ;; It should return a non-NIL value if the vm should halt.
+    ;; When it returns a non-NIL value, the vm halts.
     (loop
         while (< (aref regs ip-index) (length program))
         do (let* ((line (nth (aref regs ip-index) program))

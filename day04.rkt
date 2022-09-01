@@ -51,7 +51,7 @@
         ((empty? record) asleep) ; state doesn't change any more
         ((< minute (car record)) asleep)
         (else (asleep-during? (cdr record) minute (not asleep)))))
-        
+
 (define (count-asleep minute records)
     ; returns how many times the guard was asleep for this minute
     (count identity

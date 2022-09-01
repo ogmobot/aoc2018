@@ -74,8 +74,9 @@ std::vector<int> to_digits(size_t n) {
 }
 
 int main(void) {
+    const int input = 704321;
     RecipeList rs = RecipeList();
-    rs.solve_1(704321);
-    rs.solve_2(704321);
+    rs.solve_1(input);
+    rs.solve_2(input);
     return 0;
 }

@@ -41,7 +41,9 @@
         ;; If there is nothing to do, and all workers are finished, we're done
         ((and (null todo) (null worker-list)) elapsed)
         ;; If there are free workers, start working
-        ((and todo (< (length worker-list) workers) (next-options done graph todo))
+        ((and todo
+              (< (length worker-list) workers)
+              (next-options done graph todo))
             (let ((next-item (car (next-options done graph todo))))
                 (update-work
                     (remove next-item todo)
@@ -58,7 +60,9 @@
             (update-work
                 todo
                 (append
-                    (mapcar #'car (remove-if-not (lambda (p) (= 1 (cdr p))) worker-list))
+                    (mapcar
+                        #'car
+                        (remove-if-not (lambda (p) (= 1 (cdr p))) worker-list))
                     done)
                 graph
                 workers
@@ -69,7 +73,7 @@
 
 (defun do-the-work (seq graph workers time-function)
     (update-work seq nil graph workers nil time-function 0))
-    
+
 (let* ((tmp (get-graph-and-letters "input07.txt"))
        (graph (car tmp))
        (letters (cdr tmp))

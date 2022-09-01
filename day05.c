@@ -81,6 +81,6 @@ int main(void) {
             best = test;
         }
     }
-    printf("%d\n", best); /* 13011 is too high */
+    printf("%d\n", best);
     return 0;
 }

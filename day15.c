@@ -324,7 +324,6 @@ bool step_unit(
         size_t target = (size_t) find_nearest_of(
             terrain, units, in_range_locations, len, active->location);
 #ifdef DEBUG_STEP
-        /* TODO sometimes this happens even when adjacent target exists */
         printf("  Target square: %lu\n", target);
 #endif
         if (target != 0) {

@@ -11,7 +11,7 @@ def constellate(stars):
     first, rest = stars[0], stars[1:]
     for i, candidate in enumerate(rest):
         if any(manhattan(a, b) <= 3 for a in first for b in candidate):
-            return constellate(rest[:i] + [candidate + first] + rest[i + 1:])
+            return constellate(rest[:i] + rest[i + 1:] + [candidate + first])
     return [first] + constellate(rest)
 
 def parse_star(s):

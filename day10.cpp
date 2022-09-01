@@ -4,14 +4,6 @@
 #include <string>
 #include <vector>
 
-template <typename T, typename U>
-std::pair<T, U> operator+(
-    const std::pair<T, U> & l,
-    const std::pair<T, U> & r
-) {
-    return {l.first + r.first, l.second + r.second};
-}
-
 class Particle {
     std::pair<int, int> position;
     std::pair<int, int> velocity;
@@ -25,7 +17,10 @@ class Particle {
         velocity.second = std::stoi(line.substr(40, 2));
     }
     void step(void) {
-        this->position = position + velocity;
+        position = {
+            position.first + velocity.first,
+            position.second + velocity.second
+        };
         return;
     }
     int getx(void) {
