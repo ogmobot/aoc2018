@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# file created 2021-11-25
 
 manhattan = lambda a, b: abs(a[0]-b[0]) + abs(a[1]-b[1])
 

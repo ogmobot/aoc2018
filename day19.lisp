@@ -1,3 +1,5 @@
+;; file created 2022-08-20
+
 ;; run this with "sbcl --load <this>"
 (require :cl-ppcre)
 (declaim (optimize (speed 3) (safety 0)))

@@ -1,3 +1,5 @@
+;; file created 2022-08-18
+
 ;; run this with "sbcl --load <this>"
 (require :cl-ppcre)
 

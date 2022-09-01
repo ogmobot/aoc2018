@@ -1,3 +1,4 @@
+NB. file created 2022-07-26
 SIZE=: 300
 k   =: 4842          NB. puzzle input
 hun =: 10&|@<.@%&100 NB. hundreds digit

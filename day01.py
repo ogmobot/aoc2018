@@ -1,3 +1,5 @@
+# file created 2021-10-22
+
 input_file = open("input01.txt")
 numbers = [int(line) for line in input_file]
 

@@ -1,3 +1,5 @@
+# file created 2021-10-22
+
 def is_double (word):
     return any([word.count(letter) == 2 for letter in word])
 
