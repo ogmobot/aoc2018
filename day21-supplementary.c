@@ -35,14 +35,14 @@ int stack_contains(struct stack *s, int64_t value) {
 }
 
 /* Translation of assembly program */
-int do_program(int64_t init, int32_t mode) {
+int64_t do_program(int64_t init, int32_t mode) {
     /* Mode 0: run normally
      * Mode 1: solve part 1
      * Mode 2: solve part 2
      */
     struct stack *ns = (void *) 0;
     int64_t random_val = 0, salt, tmp;
-    int counter = 0;
+    int64_t counter = 0;
     while (1) {
         salt = random_val | 0x10000;
         random_val = 16298264;
@@ -61,11 +61,12 @@ int do_program(int64_t init, int32_t mode) {
         case 0:
             if (init == random_val)
                 return counter;
+            break;
         case 1:
             return random_val;
         case 2:
             if (stack_contains(ns, random_val)) {
-                int res = ns->value;
+                int64_t res = ns->value;
                 free_stack(ns);
                 return res;
             }
@@ -84,6 +85,6 @@ int main(void) {
     int res = do_program(init);
     printf("This number was reached after %d others.\n", res);
     */
-    printf("%d\n", do_program(0, 1));
-    printf("%d\n", do_program(0, 2));
+    printf("%ld\n", do_program(0, 1));
+    printf("%ld\n", do_program(0, 2));
 }
