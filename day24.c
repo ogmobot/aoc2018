@@ -212,7 +212,7 @@ void print_unit(struct unit u) {
 int32_t battle(struct unit *units, size_t n_units) {
     size_t init_order[MAX_UNITS] = {};
     size_t power_order[MAX_UNITS] = {};
-    uint32_t timeout = 50000; /* Assume we're in a loop if we take this long */
+    int32_t timeout = 50000; /* Assume we're in a loop if we take this long */
     for (size_t i = 0; i < n_units; i++) {
         init_order[i] = i;
         power_order[i] = i;
